@@ -1,4 +1,18 @@
 <script>
+/* === ROUTES для многостраничной версии === */
+const ROUTES = {
+  landing:   '/',           // index.html (корень сайта)
+  register:  '/register',
+  login:     '/login',
+  cabinet:   '/cabinet',
+  catalog:   '/catalog',
+  orders:    '/orders',
+  history:   '/history',
+  expiring:  '/expiring',
+  admin:     '/admin',
+  rules:     '/rules',
+  offer:     '/offer',
+};
 // === Форматирование чисел ===
 function formatNum(n) {
   const num = Number(n || 0);
@@ -314,89 +328,46 @@ function showLanding(){
 }
 
 function show(view){
-  currentView=view;
-  const vr = document.getElementById('view-reset');
-  if (vr) vr.style.display = 'none';
-  document.getElementById('view-landing').style.display  = 'none';
-  document.getElementById('view-register').style.display = 'none';
-  document.getElementById('view-login').style.display    = 'none';
-  ;['cabinet','catalog','orders','history','admin','expiring'].forEach(v=>{
-    const el = document.getElementById('view-'+v);
-    if (el) el.style.display='none';
-  });
-
-  if (view==='register' || view==='login'){
-    document.getElementById('tabsBar').style.display = 'flex';
-    document.getElementById('authNav').style.display = 'none';
-    document.getElementById('view-'+view).style.display = 'block';
-    document.getElementById('tab-register').setAttribute('aria-selected', String(view==='register'));
-    document.getElementById('tab-login').setAttribute('aria-selected', String(view==='login'));
-  } else {
-    showLanding();
-  }
+  const wantId = `view-${view}`;
+  const nodes = document.querySelectorAll('[id^="view-"]');
+  if (!nodes || nodes.length === 0) return;
+  nodes.forEach(n => n.style.display = (n.id === wantId ? '' : 'none'));
 }
 
+/* Переход между страницами по именам из HTML: onclick="nav('catalog')" */
 function nav(view){
-  currentView = view;
-  const vr = document.getElementById('view-reset');
-  if (vr) vr.style.display = 'none';
-  if (_busyCount > 0) return;
-  document.getElementById('view-landing').style.display  = 'none';
-  document.getElementById('view-register').style.display = 'none';
-  document.getElementById('view-login').style.display    = 'none';
-  ;['cabinet','catalog','orders','history','admin','expiring'].forEach(v=>{
-    const el = document.getElementById('view-'+v);
-    if (el) el.style.display = (v===view)?'block':'none';
-  });
-  document.getElementById('tabsBar').style.display = 'none';
-  document.getElementById('authNav').style.display = 'flex';
-
-  if (view==='cabinet') loadCabinet();
-  if (view==='catalog') loadCatalogFresh();
-  if (view==='orders')  { loadOrdersFresh(); }
-  if (view==='history') loadHistory();
-  if (view==='admin')   { openFirstAllowedAdminTab(); }
-  if (view==='expiring') loadExpiringFull(50);
+  const url = ROUTES[view] || '/';
+  window.location.href = url;
 }
 
-// === MULTIPAGE SHIM ===
-// Если включён режим страниц (SVOYSHOP_CONFIG.MULTIPAGE), то nav()/show() делают редиректы
-(function(){
-  const cfg = window.SVOYSHOP_CONFIG || {};
-  if (!cfg.MULTIPAGE) return;
+/* универсальный хук: делаем шапку после логина и показываем нужный таб (если он есть) */
+async function bootPage(viewToShow){
+  try {
+    await initSessionAndHeader();   // ваша существующая инициализация (показ ФИО/тел, права админа и т.п.)
+  } catch(e) {
+    console.warn('init header/session failed', e);
+  }
+  show(viewToShow);
+}
 
-  const ROUTES = {
-    'landing':  '/',          // главная (опционально)
-    'login':    '/login',     // страница Вход
-    'register': '/register',  // страница Регистрация
-    'cabinet':  '/cabinet',   // Мой кабинет
-    'catalog':  '/catalog',   // Каталог
-    'orders':   '/orders',    // Мои заявки
-    'history':  '/history',   // История
-    'admin':    '/admin',     // Админ
-    'expiring': '/expiring'   // Баллы на сгорание
-  };
+/* пример "инициализации" шапки (адаптируйте под ваш текущий код) */
+async function initSessionAndHeader(){
+  // здесь используйте вашу логику sessionGet()/me и т.п.
+  const navEl = document.getElementById('authNav');
+  if (navEl) navEl.style.display = ''; // показываем шапку, если юзер авторизован
+  // покажите/скройте #nav_admin по правам
+  const isAdmin = await checkIsAdminSafe?.(); // или ваш способ проверки
+  const navAdmin = document.getElementById('nav_admin');
+  if (navAdmin) navAdmin.style.display = isAdmin ? '' : 'none';
+}
 
-  // Переопределяем глобальные nav/show
-  const _navOrig  = window.nav;
-  const _showOrig = window.show;
-
-  window.nav = function(view){
-    const url = ROUTES[view] || '/';
-    try { window.location.href = url; } catch (_) { if (_navOrig) _navOrig(view); }
-  };
-
-  window.show = function(view){
-    // show('login'|'register') -> тоже редирект
-    if (view === 'login' || view === 'register'){
-      const url = ROUTES[view] || '/';
-      try { window.location.href = url; } catch (_) { if (_showOrig) _showOrig(view); }
-      return;
-    }
-    // прочее — оставляем поведение SPA, вдруг страница единая
-    if (_showOrig) _showOrig(view);
-  };
-})();
+/* безопасная обёртка под вашу реальную проверку */
+async function checkIsAdminSafe(){
+  try { 
+    // верните реальный флаг из вашего бэка/сессии
+    return !!window.__isAdmin;
+  } catch(_){ return false; }
+}
 
 /* =========================
    AUTH
@@ -2472,4 +2443,5 @@ window.addEventListener('load', ()=> {
   updateRegisterBtnState();
 });
 </script>
+
 
