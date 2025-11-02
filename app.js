@@ -330,8 +330,25 @@ function showLanding(){
 function show(view){
   const wantId = `view-${view}`;
   const nodes = document.querySelectorAll('[id^="view-"]');
-  if (!nodes || nodes.length === 0) return;
-  nodes.forEach(n => n.style.display = (n.id === wantId ? '' : 'none'));
+  if (!nodes || nodes.length === 0) {
+    // локальных контейнеров нет — сразу редиректим по маршруту (для многостраничной схемы)
+    const url = ROUTES?.[view];
+    if (url) window.location.href = url;
+    return;
+  }
+
+  let found = false;
+  nodes.forEach(n => {
+    const isWanted = (n.id === wantId);
+    if (isWanted) found = true;
+    n.style.display = isWanted ? '' : 'none';
+  });
+
+  // если нужного контейнера на странице нет — редиректим
+  if (!found) {
+    const url = ROUTES?.[view];
+    if (url) window.location.href = url;
+  }
 }
 
 /* Переход между страницами по именам из HTML: onclick="nav('catalog')" */
@@ -2443,5 +2460,6 @@ window.addEventListener('load', ()=> {
   updateRegisterBtnState();
 });
 </script>
+
 
 
