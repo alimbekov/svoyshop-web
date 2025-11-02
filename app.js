@@ -327,13 +327,13 @@ function showLanding(){
   document.getElementById('tabsBar').style.display = 'none';
 }
 
-function show(view){
+function show(view, opts = {}) {
+  const strict = !!opts.strict;
   const wantId = `view-${view}`;
   const nodes = document.querySelectorAll('[id^="view-"]');
 
   if (!nodes || nodes.length === 0) {
-    const url = ROUTES?.[view];
-    if (url) window.location.href = url;
+    if (!strict) nav(view); // на многостраничнике можно увести
     return;
   }
 
@@ -344,17 +344,22 @@ function show(view){
     n.style.display = isWanted ? '' : 'none';
   });
 
-  if (!found) {
-    const url = ROUTES?.[view];
-    if (url) window.location.href = url;
-  }
+  if (!found && !strict) nav(view);
 }
 
 /* Переход между страницами по именам из HTML: onclick="nav('catalog')" */
 function nav(view){
   const url = ROUTES?.[view];
-  if (url) window.location.href = url;
+  if (url) location.href = url;
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const page = window.CURRENT_PAGE || document.body?.dataset?.page;
+  if (page) {
+    // «строгое» отображение секции, никаких уходов на другие URL
+    show(page, { strict: true });
+  }
+});
 
 window.APP_JS_LOADED = true;
 
@@ -2461,6 +2466,7 @@ window.addEventListener('load', ()=> {
   updateRegisterBtnState();
 });
 </script>
+
 
 
 
