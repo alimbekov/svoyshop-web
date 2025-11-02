@@ -330,8 +330,8 @@ function showLanding(){
 function show(view){
   const wantId = `view-${view}`;
   const nodes = document.querySelectorAll('[id^="view-"]');
+
   if (!nodes || nodes.length === 0) {
-    // локальных контейнеров нет — сразу редиректим по маршруту (для многостраничной схемы)
     const url = ROUTES?.[view];
     if (url) window.location.href = url;
     return;
@@ -344,7 +344,6 @@ function show(view){
     n.style.display = isWanted ? '' : 'none';
   });
 
-  // если нужного контейнера на странице нет — редиректим
   if (!found) {
     const url = ROUTES?.[view];
     if (url) window.location.href = url;
@@ -353,9 +352,11 @@ function show(view){
 
 /* Переход между страницами по именам из HTML: onclick="nav('catalog')" */
 function nav(view){
-  const url = ROUTES[view] || '/';
-  window.location.href = url;
+  const url = ROUTES?.[view];
+  if (url) window.location.href = url;
 }
+
+window.APP_JS_LOADED = true;
 
 /* универсальный хук: делаем шапку после логина и показываем нужный таб (если он есть) */
 async function bootPage(viewToShow){
@@ -2460,6 +2461,7 @@ window.addEventListener('load', ()=> {
   updateRegisterBtnState();
 });
 </script>
+
 
 
 
