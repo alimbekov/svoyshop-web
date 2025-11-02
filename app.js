@@ -359,6 +359,45 @@ function nav(view){
   if (view==='expiring') loadExpiringFull(50);
 }
 
+// === MULTIPAGE SHIM ===
+// Если включён режим страниц (SVOYSHOP_CONFIG.MULTIPAGE), то nav()/show() делают редиректы
+(function(){
+  const cfg = window.SVOYSHOP_CONFIG || {};
+  if (!cfg.MULTIPAGE) return;
+
+  const ROUTES = {
+    'landing':  '/',          // главная (опционально)
+    'login':    '/login',     // страница Вход
+    'register': '/register',  // страница Регистрация
+    'cabinet':  '/cabinet',   // Мой кабинет
+    'catalog':  '/catalog',   // Каталог
+    'orders':   '/orders',    // Мои заявки
+    'history':  '/history',   // История
+    'admin':    '/admin',     // Админ
+    'expiring': '/expiring'   // Баллы на сгорание
+  };
+
+  // Переопределяем глобальные nav/show
+  const _navOrig  = window.nav;
+  const _showOrig = window.show;
+
+  window.nav = function(view){
+    const url = ROUTES[view] || '/';
+    try { window.location.href = url; } catch (_) { if (_navOrig) _navOrig(view); }
+  };
+
+  window.show = function(view){
+    // show('login'|'register') -> тоже редирект
+    if (view === 'login' || view === 'register'){
+      const url = ROUTES[view] || '/';
+      try { window.location.href = url; } catch (_) { if (_showOrig) _showOrig(view); }
+      return;
+    }
+    // прочее — оставляем поведение SPA, вдруг страница единая
+    if (_showOrig) _showOrig(view);
+  };
+})();
+
 /* =========================
    AUTH
 ========================= */
@@ -2433,3 +2472,4 @@ window.addEventListener('load', ()=> {
   updateRegisterBtnState();
 });
 </script>
+
